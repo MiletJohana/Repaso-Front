@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Para redirigir
-import './Login.css';
-import '../Registro/Registro'
+import { useNavigate } from 'react-router-dom';
 
-const Login: React.FC = () => {
+const Registro: React.FC = () => {
+  const [nombre, setNombre] = useState<string>('');
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false); // Estado de carga
+  const [loading, setLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
@@ -16,14 +15,28 @@ const Login: React.FC = () => {
     setError('');
     setLoading(true);
 
+    // Validación básica
+    if (!nombre || !email || !password) {
+      setError('Todos los campos son obligatorios');
+      setLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('La contraseña debe tener al menos 6 caracteres');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // 🌐 Aquí enviamos los datos al backend Django
-      const response = await fetch('http://localhost:8000/api/login/', {
+      // 🌐 Enviar datos al backend Django
+      const response = await fetch('http://localhost:8000/api/registro/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          name: nombre,
           email: email,
           password: password,
         }),
@@ -31,20 +44,18 @@ const Login: React.FC = () => {
 
       const data = await response.json();
 
-      // ✅ Si el login es exitoso
-      if (data.success) {
-        // Opcional: guardar usuario en localStorage
-        localStorage.setItem('user', JSON.stringify(data.user));
-        // Redirigir a la página de tareas
-        navigate('/tareas');
+      if (response.ok && data.success) {
+        // ✅ Registro exitoso
+        alert('Registro completado. Ahora puedes iniciar sesión.');
+        navigate('/'); // Redirige al login
       } else {
-        // ❌ Si las credenciales son incorrectas
-        setError(data.message || 'Credenciales inválidas');
+        // ❌ Error desde el backend
+        setError(data.message || 'Error en el registro');
       }
     } catch (err) {
-      // ❌ Error de conexión (ej. backend apagado)
+      // ❌ Error de conexión
       setError('No se pudo conectar con el servidor. Intenta más tarde.');
-      console.error('Error al conectar con el backend:', err);
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
@@ -53,9 +64,8 @@ const Login: React.FC = () => {
   return (
     <div className="login-background">
       <div className="login-card">
-        <h2 className="login-title">Iniciar Sesión</h2>
+        <h2 className="login-title">Crear Cuenta</h2>
 
-        {/* Mensaje de error */}
         {error && (
           <div className="alert alert-danger p-2 mb-3 text-center" role="alert">
             {error}
@@ -63,7 +73,23 @@ const Login: React.FC = () => {
         )}
 
         <form onSubmit={handleSubmit}>
-          {/* Campo de Email */}
+          {/* Campo Nombre */}
+          <div className="mb-3">
+            <label htmlFor="nombre" className="form-label">
+              Nombre completo
+            </label>
+            <input
+              type="text"
+              className="form-control"
+              id="nombre"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Juan Pérez"
+              required
+            />
+          </div>
+
+          {/* Campo Email */}
           <div className="mb-3">
             <label htmlFor="email" className="form-label">
               Correo electrónico
@@ -79,7 +105,7 @@ const Login: React.FC = () => {
             />
           </div>
 
-          {/* Campo de Contraseña */}
+          {/* Campo Contraseña */}
           <div className="mb-3">
             <label htmlFor="password" className="form-label">
               Contraseña
@@ -91,6 +117,7 @@ const Login: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
+              minLength={6}
               required
             />
           </div>
@@ -98,19 +125,19 @@ const Login: React.FC = () => {
           {/* Botón de envío */}
           <button
             type="submit"
-            className="btn btn-primary login-btn w-100"
+            className="btn btn-primary w-100"
             disabled={loading}
           >
-            {loading ? 'Cargando...' : 'Ingresar'}
+            {loading ? 'Registrando...' : 'Registrarse'}
           </button>
         </form>
 
         <div className="text-center mt-3">
           <small className="text-muted">
-            ¿No tienes cuenta?{' '}
-            <Link to="/registro" className="text-primary" style={{ textDecoration: 'underline' }}>
-              Regístrate
-            </Link>
+            ¿Ya tienes cuenta?{' '}
+            <a href="/" style={{ textDecoration: 'underline' }}>
+              Inicia sesión
+            </a>
           </small>
         </div>
       </div>
@@ -118,4 +145,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login;
+export default Registro;
